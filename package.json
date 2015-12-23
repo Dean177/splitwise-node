@@ -1,0 +1,26 @@
+{
+  "author": "Dean Merchant <deanmerchant@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/JedWatson/classnames/issues"
+  },
+  "dependencies": {
+    "oauth": "0.9.14",
+    "promise": "7.1.1"
+  },
+  "description": "A javascript wrapper for the splitwise API",
+  "devDependencies": {
+    "chai": "3.4.1",
+    "karma": "0.13.15"
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "name": "splitwise-node",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Dean177/splitwise-node.git"
+  },
+  "scripts": {
+    "test": "mocha --harmony_destructuring SplitwiseApi.spec.js"
+  },
+  "version": "0.0.0"
+}
