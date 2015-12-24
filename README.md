@@ -14,7 +14,7 @@ npm install splitwise-node
 
 ## Usage
 
-Get token and secret from [Splitwise]
+Get your ConsumerToken and ConsumerSecret from [Splitwise]
 If being used in an opensource project be sure not to commit these to you repository. Maybe add these to your .gitignore
 
 ```js

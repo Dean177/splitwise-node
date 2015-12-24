@@ -1,40 +1,12 @@
 "use strict";
 const OAuth = require('oauth').OAuth;
 const Promise = require('promise');
+const urlUtil = require('./urlUtil');
+const { encodeAsUrlParam, encodeObjectArray } = urlUtil;
 
-function __asUrlParams(object) {
-  return Object
-    .keys(object)
-    .map((key) => {
-      // Validate the value is a boolean, string or number?
-      // Skip keys whose value is null or undefined
-      if (object[key] == null) { return null; }
-      return `${encodeURIComponent(key)}=${encodeURIComponent(object[key])}`
-    })
-    .filter((val) => val != null)
-    .join('&');
-}
-
-function __flattenObjectArray(prefix, arr) {
-  const encodedPrefix = encodeURIComponent(prefix);
-  const flatten = (arr) => [].concat.apply([], arr);
-
-  const nestedArrays = arr.map((obj, index) => {
-    return Object.keys(obj).map((key) => {
-      const encodedKey = encodeURIComponent(key);
-      const encodedValue = encodeURIComponent(obj[key]);
-      // assert the value is a boolean string or number (or date!?) ?
-      return `${encodedPrefix}__${index}__${encodedKey}=${encodedValue}`;
-    });
-  });
-
-  return flatten(nestedArrays);
-
-}
-
-class SplitwiseApi {
+class AuthApi {
   constructor(consumerKey, consumerSecret) {
-    this.auth = new OAuth(
+    this.__auth = new OAuth(
       'https://secure.splitwise.com/api/v3.0/get_request_token',
       'https://secure.splitwise.com/api/v3.0/get_access_token',
       consumerKey,
@@ -48,7 +20,7 @@ class SplitwiseApi {
   // OAuth methods
   getOAuthRequestToken() {
     return new Promise((fulfill, reject) => {
-      this.auth.getOAuthRequestToken(function (err, oAuthToken, oAuthTokenSecret, results) {
+      this.__auth.getOAuthRequestToken(function (err, oAuthToken, oAuthTokenSecret, results) {
         if (err) reject(err);
         else fulfill({ oAuthToken, oAuthTokenSecret });
       });
@@ -59,31 +31,31 @@ class SplitwiseApi {
     return `https://secure.splitwise.com/authorize?oauth_token=${oAuthToken}`
   }
 
-  // TODO seem to be able to use the api
+  // TODO seem to be able to use the api without needing to exchange the request token for an access token
   getOAuthAccessToken(oAuthToken , oAuthTokenSecret, oAuthVerifier) {
     return new Promise((fulfill, reject) => {
-      this.auth.getOAuthAccessToken(oAuthToken, oAuthTokenSecret, oAuthVerifier, function (err, oAuthAccessToken, oAuthAccessTokenSecret) {
+      this.__auth.getOAuthAccessToken(oAuthToken, oAuthTokenSecret, oAuthVerifier, function (err, oAuthAccessToken, oAuthAccessTokenSecret) {
         if (err) reject(err);
         else fulfill({ oAuthAccessToken, oAuthAccessTokenSecret });
       });
     });
   }
 
-  getUserSpecificApi(oAuthToken, oAuthSecret) {
-    return new UserSpecificApi(this.auth, oAuthToken, oAuthSecret);
+  getSplitwiseApi(oAuthToken, oAuthSecret) {
+    return new SplitwiseApi(this.__auth, oAuthToken, oAuthSecret);
   }
 }
 
-class UserSpecificApi {
-  constructor(oAuth, oAuthToken, oAuthTokenSecret) {
-    this.auth = oAuth;
+class SplitwiseApi {
+  constructor(authApi, oAuthToken, oAuthTokenSecret) {
+    this.__auth = authApi.__auth;
     this.oAuthToken = oAuthToken;
     this.oAuthTokenSecret = oAuthTokenSecret;
   }
 
   __authGet(url) {
     return new Promise((fulfill, reject) => {
-      this.auth.get(url, this.oAuthToken, this.oAuthTokenSecret, function (err, data) {
+      this.__auth.get(url, this.oAuthToken, this.oAuthTokenSecret, function (err, data) {
         if (err) reject(err);
         else fulfill(JSON.parse(data));
       });
@@ -93,7 +65,7 @@ class UserSpecificApi {
   __authPost(url, body) {
     const contentType = 'application/json';
     return new Promise((fulfill, reject) => {
-      this.auth.post(url, this.oAuthToken, this.oAuthTokenSecret, body, contentType, function (err, data) {
+      this.__auth.post(url, this.oAuthToken, this.oAuthTokenSecret, body, contentType, function (err, data) {
         if (err) reject(err);
         else fulfill(JSON.parse(data));
       });
@@ -102,7 +74,7 @@ class UserSpecificApi {
 
   __authDelete(url) {
     return new Promise((fulfill, reject) => {
-      this.auth.delete(url, this.oAuthToken, this.oAuthTokenSecret, function (err, data) {
+      this.__auth.delete(url, this.oAuthToken, this.oAuthTokenSecret, function (err, data) {
         if (err) reject(err);
         else fulfill(JSON.parse(data));
       });
@@ -122,7 +94,7 @@ class UserSpecificApi {
   }
 
   parseSentence(sentence, friendId) {
-    const paramString = __asUrlParams({
+    const paramString = encodeAsUrlParam({
       input: sentence,
       friend_id: friendId
     });
@@ -155,11 +127,23 @@ class UserSpecificApi {
       .then(data => data['group']);
   }
 
+  // Parameters:
+  //name
+  //group_type (optional)
+  //country_code (optional)
+  //a list of group members:
+  //users__ARRAYINDEX__PARAMNAME
+  //params are either: (first_name, last_name, email) or (user_id)
+  //Return value:
+  //
+  //Detailed info for the given group
+  //In the event of an error, group hash will include an “errors” attribute, which is an array of errors
   createGroup(name, members, groupType, countryCode) {
-    const paramString = __asUrlParams({
+    const paramString = encodeAsUrlParam({
       name,
       group_type: groupType,
-      country_code: countryCode
+      country_code: countryCode,
+      members: encodeObjectArray('users', members)
     });
     return 'https://secure.splitwise.com/api/v3.0/create_group';
   }
@@ -264,7 +248,7 @@ class UserSpecificApi {
   }
 }
 
-module.exports = SplitwiseApi;
-module.exports.__asUrlParams = __asUrlParams;
-module.exports.__flattenObjectArray= __flattenObjectArray;
-module.exports.UserSpecificApi = UserSpecificApi;
+module.exports = AuthApi;
+module.exports.__asUrlParams = encodeAsUrlParam;
+module.exports.__flattenObjectArray= encodeObjectArray;
+module.exports.UserSpecificApi = SplitwiseApi;

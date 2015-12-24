@@ -20,7 +20,7 @@
     "url": "git@github.com:Dean177/splitwise-node.git"
   },
   "scripts": {
-    "test": "mocha --harmony_destructuring SplitwiseApi.spec.js"
+    "test": "mocha --harmony_destructuring"
   },
   "version": "0.0.0"
 }
