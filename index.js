@@ -1,12 +1,35 @@
 "use strict";
 const OAuth = require('oauth').OAuth;
-const Promise = require("promise").Promise;
+const Promise = require('promise');
 
-function asUrlParams(object) {
+function __asUrlParams(object) {
   return Object
     .keys(object)
-    .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(object[key])}`)
+    .map((key) => {
+      // Validate the value is a boolean, string or number?
+      // Skip keys whose value is null or undefined
+      if (object[key] == null) { return null; }
+      return `${encodeURIComponent(key)}=${encodeURIComponent(object[key])}`
+    })
+    .filter((val) => val != null)
     .join('&');
+}
+
+function __flattenObjectArray(prefix, arr) {
+  const encodedPrefix = encodeURIComponent(prefix);
+  const flatten = (arr) => [].concat.apply([], arr);
+
+  const nestedArrays = arr.map((obj, index) => {
+    return Object.keys(obj).map((key) => {
+      const encodedKey = encodeURIComponent(key);
+      const encodedValue = encodeURIComponent(obj[key]);
+      // assert the value is a boolean string or number (or date!?) ?
+      return `${encodedPrefix}__${index}__${encodedKey}=${encodedValue}`;
+    });
+  });
+
+  return flatten(nestedArrays);
+
 }
 
 class SplitwiseApi {
@@ -32,6 +55,11 @@ class SplitwiseApi {
     });
   }
 
+  getUserAuthorisationUrl(oAuthToken) {
+    return `https://secure.splitwise.com/authorize?oauth_token=${oAuthToken}`
+  }
+
+  // TODO seem to be able to use the api
   getOAuthAccessToken(oAuthToken , oAuthTokenSecret, oAuthVerifier) {
     return new Promise((fulfill, reject) => {
       this.auth.getOAuthAccessToken(oAuthToken, oAuthTokenSecret, oAuthVerifier, function (err, oAuthAccessToken, oAuthAccessTokenSecret) {
@@ -39,10 +67,6 @@ class SplitwiseApi {
         else fulfill({ oAuthAccessToken, oAuthAccessTokenSecret });
       });
     });
-  }
-
-  getUserAuthorisationUrl(oAuthToken) {
-    return `https://secure.splitwise.com/authorize?oauth_token=${oAuthToken}`
   }
 
   getUserSpecificApi(oAuthToken, oAuthSecret) {
@@ -61,7 +85,7 @@ class UserSpecificApi {
     return new Promise((fulfill, reject) => {
       this.auth.get(url, this.oAuthToken, this.oAuthTokenSecret, function (err, data) {
         if (err) reject(err);
-        else fulfill(data);
+        else fulfill(JSON.parse(data));
       });
     });
   }
@@ -71,7 +95,7 @@ class UserSpecificApi {
     return new Promise((fulfill, reject) => {
       this.auth.post(url, this.oAuthToken, this.oAuthTokenSecret, body, contentType, function (err, data) {
         if (err) reject(err);
-        else fulfill(data);
+        else fulfill(JSON.parse(data));
       });
     });
   }
@@ -80,26 +104,30 @@ class UserSpecificApi {
     return new Promise((fulfill, reject) => {
       this.auth.delete(url, this.oAuthToken, this.oAuthTokenSecret, function (err, data) {
         if (err) reject(err);
-        else fulfill(data);
+        else fulfill(JSON.parse(data));
       });
     });
   }
 
-
   // Api Methods
+  // Returns Array<Currency> { currency_code: 'GBP', unit: '£' }
   getCurrencies() {
-    // TODO
-    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_currencies');
+    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_currencies')
+      .then(data => data['currencies']);
   }
 
   getCategories() {
-    // TODO
-    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_categories');
+    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_categories')
+      .then(data => data['categories'][0]);
   }
 
-  parseSentence(sentence) {
-    // TODO
-    return this.__authPost('https://secure.splitwise.com/api/v3.0/parse_sentence', null);
+  parseSentence(sentence, friendId) {
+    const paramString = __asUrlParams({
+      input: sentence,
+      friend_id: friendId
+    });
+
+    return this.__authPost(`https://secure.splitwise.com/api/v3.0/parse_sentence?${paramString}`, null);
   }
 
   // Users
@@ -117,23 +145,52 @@ class UserSpecificApi {
   }
 
   // Groups
-  getGroups() { return 'https://secure.splitwise.com/api/v3.0/get_groups'; }
-  getGroup(groupId) { return 'https://secure.splitwise.com/api/v3.0/get_group/:id'; }
-  createGroup(group) { return 'https://secure.splitwise.com/api/v3.0/create_group'; }
-  deleteGroup(groupId) { return `https://secure.splitwise.com/api/v3.0/delete_group/${groupId}`; }
-  addUserToGroup(groupId, userId) { return 'https://secure.splitwise.com/api/v3.0/add_user_to_group'; }
-  removeUserFromGroup(groupId, userId) { return 'https://secure.splitwise.com/api/v3.0/remove_user_from_group'; }
+  getGroups() {
+    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_groups')
+      .then(data => data['groups']);
+  }
 
+  getGroup(groupId) {
+    return this.__authGet(`https://secure.splitwise.com/api/v3.0/get_group/${groupId}`)
+      .then(data => data['group']);
+  }
+
+  createGroup(name, members, groupType, countryCode) {
+    const paramString = __asUrlParams({
+      name,
+      group_type: groupType,
+      country_code: countryCode
+    });
+    return 'https://secure.splitwise.com/api/v3.0/create_group';
+  }
+
+  deleteGroup(groupId) {
+    return `https://secure.splitwise.com/api/v3.0/delete_group/${groupId}`;
+  }
+
+  addUserToGroup(groupId, userId) {
+    return 'https://secure.splitwise.com/api/v3.0/add_user_to_group';
+  }
+
+  removeUserFromGroup(groupId, userId) {
+    return 'https://secure.splitwise.com/api/v3.0/remove_user_from_group';
+  }
 
   // Expenses
   getExpenses() {
-    // TODO
-    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_expenses');
+    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_expenses')
+      .then(data => data['expenses'].filter(expense => expense.deleted_at == null));
+  }
+
+  getDeletedExpenses() {
+    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_expenses')
+      .then(data => data['expenses'].filter(expense => expense.deleted_at != null));
   }
 
   getExpense(expenseId) {
     // TODO
-    return  this.__authGet(`https://secure.splitwise.com/api/v3.0/get_expense/${expenseId}`);
+    return  this.__authGet(`https://secure.splitwise.com/api/v3.0/get_expense/${expenseId}`)
+      .then(data => data['expense']);
   }
 
   // There's a bug in out parameter handling with OAuth. Normally, you would submit an array with some formatting similar to:
@@ -164,14 +221,22 @@ class UserSpecificApi {
     return this.__authPost(`https://secure.splitwise.com/api/v3.0/delete_expense/${expenseId}`, {});
   }
 
+  /**
+   * Returns an array of friends // TODO detail friend schema
+   * @returns {Promise<Array<Object>|Error>}
+   */
   getFriends() {
-    // TODO
-    return  this.__authGet('https://secure.splitwise.com/api/v3.0/get_friends');
+    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_friends')
+      .then(data => data['friends']);
   }
 
+  /**
+   * Returns the friend // TODO detail friend schema
+   * @returns {Promise<Object|Error>}
+   */
   getFriend(friendId) {
-    // TODO
-    return  this.__authGet(`http://secure.splitwise.com/api/v3.0/get_friend/${friendId}`);
+    return  this.__authGet(`http://secure.splitwise.com/api/v3.0/get_friend/${friendId}`)
+      .then(data => data['friend']);
   }
 
   createFriend(friend) {
@@ -189,14 +254,17 @@ class UserSpecificApi {
     return this.__authDelete(`https://secure.splitwise.com/api/v3.0/delete_friend/${friendId}`);
   }
 
+  /**
+   * Returns an array of notifications
+   * @returns {Promise<Array<Object>|Error>}
+   */
   getNotifications() {
-    // TODO
-    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_notifications');
+    return this.__authGet('https://secure.splitwise.com/api/v3.0/get_notifications')
+      .then(data => data['notifications']);
   }
 }
 
-module.exports = {
-  asUrlParams,
-  SplitwiseApi,
-  UserSpecificApi
-};
+module.exports = SplitwiseApi;
+module.exports.__asUrlParams = __asUrlParams;
+module.exports.__flattenObjectArray= __flattenObjectArray;
+module.exports.UserSpecificApi = UserSpecificApi;

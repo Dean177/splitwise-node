@@ -1,7 +1,7 @@
 splitwise-node
 ===========
 
-### DO NOT USE
+## DO NOT USE
 This is still under active development, and the api presented may change wildly until the first version is published.
 
 A javascript wrapper for the Splitwise API.
