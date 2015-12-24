@@ -10,7 +10,7 @@
   "description": "A javascript wrapper for the splitwise API",
   "devDependencies": {
     "chai": "3.4.1",
-    "karma": "0.13.15"
+    "karma": "0.13.16"
   },
   "license": "MIT",
   "main": "index.js",
