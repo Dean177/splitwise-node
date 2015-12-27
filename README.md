@@ -14,19 +14,28 @@ npm install splitwise-node
 
 ## Usage
 
-Get your ConsumerToken and ConsumerSecret from [Splitwise]
-If being used in an opensource project be sure not to commit these to you repository. Maybe add these to your .gitignore
+1. Get your ConsumerToken and ConsumerSecret from [Splitwise]
+2. Provide these as environment variables to you application
+3. Get a
+```javascript
+var AuthApi = require('splitwise-node');
 
-```js
-import { SplitWiseApi, } from 'splitwise-node';
+var userOAuthToken, userOAuthTokenSecret;
+var authApi = new AuthApi(ConsumerKey, ConsumerSecret);
+var userAuthUrl = authApi.getOAuthRequestToken()
+    .then(({ oAuthToken, oAuthTokenSecret }) => {
+        var [userOAuthToken, userOAuthTokenSecret] = [oAuthToken, oAuthTokenSecret];
+        return api.getUserAuthorisationUrl(oAuthToken);
+    });
+```
 
-const api = new SplitwiseApi(consumerToken, consumerSecret);
+4. Get your user to authenticate your token by visiting the authorization url
+// TODO add a screenshot of the auth screen
+// TODO mention the user will be directed to the callback
 
-api.getAuthorizationLink();
-
-const userApi = new UserApi(api, oAuthToken, oAuthSecret);
-
-userApi.doAThing();
+5. Now you can api away
+```javascript
+var splitwiseApi = authApi.getSplitwiseApi(userOAuthToken, userOAuthTokenSecret);
 
 ```
 

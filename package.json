@@ -4,10 +4,11 @@
     "url": "https://github.com/JedWatson/classnames/issues"
   },
   "dependencies": {
+    "lodash.flatten": "3.0.2",
     "oauth": "0.9.14",
     "promise": "7.1.1"
   },
-  "description": "A javascript wrapper for the splitwise API",
+  "description": "A javascript wrapper for the Splitwise API",
   "devDependencies": {
     "chai": "3.4.1",
     "karma": "0.13.15"

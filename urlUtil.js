@@ -1,16 +1,21 @@
+const flatten = require('lodash.flatten');
+
 function encodeAsUrlParam(object) {
-  return Object
+  const keyValuePairs =  Object
     .keys(object)
+    .filter((key) => object[key] != null)
     .map((key) => {
       const value = object[key];
-      // Validate the value is not an 'Object'?
+
       if (value.constructor == Array) {
-        return value; // Hmm, now we have ['abc' [array], 'foo']
+        return value;
       }
+
       return encodeKeyValuePair(key, value);
-    })
-    .filter((val) => val != null)
-    .join('&');
+    });
+
+
+  return flatten(keyValuePairs).join('&');
 }
 
 function encodeKeyValuePair(key, value) {
@@ -19,18 +24,21 @@ function encodeKeyValuePair(key, value) {
   return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
 }
 
-// TODO, just use underscore or lodash ?
-const flatten = (arr) => [].concat.apply([], arr);
-
+/**
+ * Takes an array of objects and returns an array of strings using the following format
+ * `${prefix}__${arrayIndex}__${keyName}={value}`
+ *
+ * @param {string} prefix
+ * @param {Array<Object>} arr
+ * @returns {Array<String>}
+ */
 function encodeObjectArray(prefix, arr) {
   const encodedPrefix = encodeURIComponent(prefix);
 
   const nestedArrays = arr.map((obj, index) => {
     return Object.keys(obj).map((key) => {
-      const encodedKey = encodeURIComponent(key);
-      const encodedValue = encodeURIComponent(obj[key]);
-      // assert the value is a boolean string or number (or date!?) ?
-      return `${encodedPrefix}__${index}__${encodedKey}=${encodedValue}`;
+      const value = obj[key];
+      return `${encodedPrefix}__${index}__${encodeKeyValuePair(key, value)}`;
     });
   });
 
@@ -40,6 +48,5 @@ function encodeObjectArray(prefix, arr) {
 module.exports = {
   encodeAsUrlParam,
   encodeKeyValuePair,
-  encodeObjectArray,
-  flatten
+  encodeObjectArray
 };
