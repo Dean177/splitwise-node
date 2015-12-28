@@ -1,6 +1,8 @@
 splitwise-node
 ===========
 
+[![Circle CI](https://circleci.com/gh/Dean177/splitwise-node.svg?style=svg)](https://circleci.com/gh/Dean177/splitwise-node)
+
 ## DO NOT USE
 This is still under active development, and the api presented may change wildly until the first version is published.
 
