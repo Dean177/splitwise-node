@@ -1,18 +1,11 @@
 "use strict";
 const OAuth = require('oauth').OAuth;
 const Promise = require('promise');
+const util = require('./util');
+const { objectHasInvalidKeys } = util;
 const urlUtil = require('./urlUtil');
 const { encodeAsUrlParam, encodeObjectArray } = urlUtil;
 
-function objectHasInvalidKeys(arr, obj) {
-  Object.keys(obj).forEach((key) => {
-    if (arr.indexOf(key) === -1) {
-      return { error: `object: ${obj} contained invalid key: ${key}, keys must be one of ${arr}.` };
-    }
-  });
-
-  return false;
-}
 
 const validExpenseKeys = ['group_id', 'friendship_id', 'dated_after', 'dated_before', 'updated_after', 'updated_before', 'limit', 'offset'];
 const requiredFriendKeys = ['user_email', 'user_first_name'];
@@ -142,6 +135,13 @@ class SplitwiseApi {
    * Category: {
    *   id: Number
    *   name: String
+   *   icon: String // TODO dimensions
+   *   icon_types: {
+   *    slim: {
+   *      small: String,
+   *      large: String
+   *    }
+   *   },
    *   subcategories: Array<Category>
    * }
    *
@@ -178,6 +178,38 @@ class SplitwiseApi {
   // Users
   /**
    * Returns the current user
+   *
+   * User: {
+   *   id: Number,
+   *   first_name: String,
+   *   last_name: String,
+   *   picture: {
+   *     small: String,
+   *     medium: String,
+   *     large: String
+   *   },
+   *   email: String,
+   *   registration_status: String, // One if “dummy”, “invited”, and “confirmed”.
+   *   force_refresh_at: null,
+   *   locale: null,
+   *   country_code: 'GB',
+   *   date_format: 'MM/DD/YYYY',
+   *   default_currency: 'GBP',
+   *   default_group_id: -1,
+   *   notifications_read: '2015-12-24T13:44:37Z',
+   *   notifications_count: 0,
+   *   notifications: {
+   *     added_as_friend: false,
+   *     added_to_group: true,
+   *     expense_added: false,
+   *     expense_updated: false,
+   *     bills: true,
+   *     payments: true,
+   *     monthly_summary: true,
+   *     announcements: true
+   *   }
+   * }
+   *
    * @returns {Promise<Error|User>}
    */
   getCurrentUser() {
@@ -187,6 +219,8 @@ class SplitwiseApi {
 
   /**
    * Returns the user with the provided id
+   * See getFriend
+   *
    * @param {Number} userId
    * @returns {Promise<Error|User>}
    */
@@ -220,6 +254,7 @@ class SplitwiseApi {
   // Groups
   /**
    * Returns list of all groups that the current_user belongs to
+   *
    * @returns {Promise<Error|Array>} - Detailed info for all groups that include the authenticated user
    */
   getGroups() {
@@ -229,6 +264,24 @@ class SplitwiseApi {
 
   /**
    * Get detailed info on one group that current_user belongs to
+   *
+   * Debt: {
+   *   from: Number, // A user id
+   *   to: Number, // A user id
+   *   amount: String, // eg '24.98'
+   *   currency_code: String // See getCurrencies
+   * }
+   *
+   * Group: {
+   *   id: 0,
+   *   name: 'Non-group expenses',
+   *   updated_at: '2015-12-24T14:04:44Z',
+   *   members: Array<UserBasic>,
+   *   simplify_by_default: false,
+   *   original_debts: Array<Debt>
+   *   simplified_debts: Array<Debt
+   * }
+   *
    * @param {Number} groupId
    * @returns {Promise<Error|Array>}
    */
@@ -290,7 +343,7 @@ class SplitwiseApi {
 
   /**
    * @param {String} groupId
-   * @returns {Promise<Boolean>} - success
+   * @returns {Promise<Error|Boolean>} - success
    */
   deleteGroup(groupId) {
     return this.__authPost(`https://secure.splitwise.com/api/v3.0/delete_group/${groupId}`)
@@ -346,7 +399,7 @@ class SplitwiseApi {
   // Expenses
   /**
    * Return expenses involving the current user, in reverse chronological order
-   * expensesConfig: {
+   * ExpensesConfig: {
    *   group_id: Number
    *   friendship_id: Number
    *   dated_after
@@ -380,7 +433,7 @@ class SplitwiseApi {
    *     id: Number,
    *     name: String
    *   },
-   *
+   * // The following are not detailed in the api docs
    *  email_reminder: Boolean,
    *  email_reminder_in_advance: Number,
    *  next_repeat: null,
@@ -462,13 +515,15 @@ class SplitwiseApi {
   /**
    * Add an expense
    * TODO explain the structure of these errors & params
-   * { errors:
-     { description: [ 'can\'t be blank' ],
-     base:
-      [ 'The total of everyone\'s owed shares ($5.00) is different than the total cost ($9.99)',
-        'The total of everyone\'s paid shares ($0.00) is different than the total cost ($9.99)',
-        'You cannot add an expense that does not involve yourself, unless that expense is in a group.' ] } }
-
+   * ErrorObj: {
+   *   base: [
+   *     'The total of everyone\'s owed shares ($5.00) is different than the total cost ($9.99)',
+   *     'The total of everyone\'s paid shares ($0.00) is different than the total cost ($9.99)',
+   *     'You cannot add an expense that does not involve yourself, unless that expense is in a group.'
+   *   ],
+   *   description: [ 'can\'t be blank' ]
+   * }
+   *
    * @param {Object} expense
    * @param {Array<UserShare>} userShares
    * @returns {Promise<ErrorObj|Array<Expense>>} - Returns an array containing the expense which has just been created or an object with an errors key
@@ -500,9 +555,7 @@ class SplitwiseApi {
     return this.__authPost(`https://secure.splitwise.com/api/v3.0/create_expense?${paramString}`, expense)
       .then(data => {
         if (data.errors && Object.keys(data.errors).length != 0) {
-          return Promise.reject({
-            errors: data.errors
-          });
+          return Promise.reject(data.errors);
         }
 
         return data['expenses'];
