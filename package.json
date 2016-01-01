@@ -1,7 +1,7 @@
 {
   "author": "Dean Merchant <deanmerchant@gmail.com>",
   "bugs": {
-    "url": "https://github.com/JedWatson/classnames/issues"
+    "url": "https://github.com/Dean177/splitwise-node/issues"
   },
   "dependencies": {
     "lodash.flatten": "3.0.2",
