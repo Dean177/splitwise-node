@@ -120,6 +120,17 @@ class SplitwiseApi {
 
   // Api Methods
   /**
+   * A service health-check
+   *
+   * @returns {Promise<boolean>}
+   */
+  isServiceOk() {
+    return this.__authGet('https://secure.splitwise.com/api/v3.0/test')
+      .then(() => { return true; })
+      .catch(() => { return false; });
+  }
+
+  /**
    * Returns a list of all currencies allowed by the system
    * Currency: { currency_code: 'GBP', unit: '£' }
    *
@@ -149,7 +160,7 @@ class SplitwiseApi {
    */
   getCategories() {
     return this.__authGet('https://secure.splitwise.com/api/v3.0/get_categories')
-      .then(data => data['categories'][0]);
+      .then(data => data['categories']);
   }
 
   /**
@@ -410,7 +421,7 @@ class SplitwiseApi {
    *   offset:Number
    * }
    *
-   * // TODO this what the api really reutrns, the docs arent up to date
+   * // TODO this what the api really returns, the docs aren't up to date
    * Expense: {
    *   id: Number
    *   group_id: Number
@@ -482,7 +493,7 @@ class SplitwiseApi {
     }
 
     return this.__authGet(requestUrl)
-      .then(data => data['expenses'].filter(expense => expense.deleted_at == null));
+      .then(data => data['expenses'].filter(expense => expense['deleted_at'] == null));
   }
 
   /**
@@ -499,7 +510,7 @@ class SplitwiseApi {
       requestUrl = `${baseUrl}?${encodeAsUrlParam(expensesConfig)}`;
     }
     return this.__authGet(requestUrl)
-      .then(data => data['expenses'].filter(expense => expense.deleted_at != null));
+      .then(data => data['expenses'].filter(expense => expense['deleted_at'] != null));
   }
 
   /**
