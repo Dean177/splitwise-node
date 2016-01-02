@@ -27,11 +27,21 @@ class AuthApi {
   }
 
   // OAuth methods
+  /**
+   * Fetch a request token to be authorized by a user.
+   *
+   * TokenSecret: {
+   *   token: string,
+   *   secret: string,
+   * }
+   *
+   * @returns {Promise<Error|TokenSecret>}
+   */
   getOAuthRequestToken() {
     return new Promise((fulfill, reject) => {
       this.__auth.getOAuthRequestToken(function (err, oAuthToken, oAuthTokenSecret, results) {
         if (err) reject(err);
-        else fulfill({ oAuthToken, oAuthTokenSecret });
+        else fulfill({ token: oAuthToken, secret: oAuthTokenSecret });
       });
     });
   }
