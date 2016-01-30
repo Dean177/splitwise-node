@@ -4,7 +4,6 @@ splitwise-node
 [![Circle CI](https://circleci.com/gh/Dean177/splitwise-node.svg?style=svg)](https://circleci.com/gh/Dean177/splitwise-node)
 
 A javascript wrapper for the Splitwise API.
-This is still under active development, and the api presented may change wildly until the first version is published.
 
 Install with npm 
 
