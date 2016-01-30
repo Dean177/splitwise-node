@@ -1,6 +1,6 @@
 const chai = require('chai');
 const { expect } = chai; 
-const urlUtil = require('./../urlUtil');
+const urlUtil = require('./../src/urlUtil');
 const {
   encodeAsUrlParam,
   encodeKeyValuePair,

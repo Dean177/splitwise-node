@@ -1,5 +1,5 @@
 const chai = require('chai');
-const AuthApi = require('./../index');
+const AuthApi = require('./../src/index');
 const { SplitwiseApi } = AuthApi;
 
 describe('splitwise-api',() => {

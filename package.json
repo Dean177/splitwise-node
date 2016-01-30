@@ -10,17 +10,24 @@
   },
   "description": "A javascript wrapper for the Splitwise API",
   "devDependencies": {
+    "babel-cli": "^6.4.5",
+    "babel-preset-es2015": "6.3.13",
     "chai": "3.4.1",
     "karma": "0.13.16"
   },
+  "keywords": [
+    "Splitwise"
+  ],
   "license": "MIT",
-  "main": "index.js",
+  "main": "lib/index.js",
   "name": "splitwise-node",
   "repository": {
     "type": "git",
     "url": "git@github.com:Dean177/splitwise-node.git"
   },
   "scripts": {
+    "build": "babel src -d lib",
+    "prepublish": "npm run build",
     "test": "mocha --harmony_destructuring"
   },
   "version": "0.2.0"
