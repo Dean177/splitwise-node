@@ -21,9 +21,9 @@ var AuthApi = require('splitwise-node');
 var userOAuthToken, userOAuthTokenSecret;
 var authApi = new AuthApi(ConsumerKey, ConsumerSecret);
 var userAuthUrl = authApi.getOAuthRequestToken()
-    .then(({ oAuthToken, oAuthTokenSecret }) => {
-        [userOAuthToken, userOAuthTokenSecret] = [oAuthToken, oAuthTokenSecret];
-        return api.getUserAuthorisationUrl(oAuthToken);
+    .then(({ token, secret }) => {
+        [userOAuthToken, userOAuthTokenSecret] = [token, secret];
+        return api.getUserAuthorisationUrl(token);
     });
 ```
 - Get your user to authorize your token by visiting the authorization url
