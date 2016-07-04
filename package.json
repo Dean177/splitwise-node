@@ -4,7 +4,7 @@
     "url": "https://github.com/Dean177/splitwise-node/issues"
   },
   "dependencies": {
-    "lodash.flatten": "4.1.0",
+    "lodash.flatten": "4.1.1",
     "oauth": "0.9.14",
     "promise": "7.1.1"
   },
