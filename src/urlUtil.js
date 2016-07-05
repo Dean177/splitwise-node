@@ -1,4 +1,4 @@
-const flatten = require('lodash.flatten');
+const flattenDeep = require('lodash.flattendeep');
 
 function encodeAsUrlParam(object) {
   const keyValuePairs =  Object
@@ -15,7 +15,7 @@ function encodeAsUrlParam(object) {
     });
 
 
-  return flatten(keyValuePairs).join('&');
+  return flattenDeep(keyValuePairs).join('&');
 }
 
 function encodeKeyValuePair(key, value) {
@@ -42,7 +42,7 @@ function encodeObjectArray(prefix, arr) {
     });
   });
 
-  return flatten(nestedArrays);
+  return flattenDeep(nestedArrays);
 }
 
 module.exports = {
