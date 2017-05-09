@@ -5,7 +5,7 @@
   },
   "dependencies": {
     "lodash.flattendeep": "4.2.0",
-    "oauth": "0.9.14",
+    "oauth": "0.9.15",
     "promise": "7.1.1"
   },
   "description": "A javascript wrapper for the Splitwise API",
